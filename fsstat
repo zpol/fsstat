@@ -1,0 +1,40 @@
+#!/bin/bash
+STATUS_FILE="/tmp/mount.status"
+#Save mount status
+mount | sed "s/\ /:/g"> $STATUS_FILE
+
+GET_UUID_DEVICES=`cat $STATUS_FILE | grep "^\/dev\/disk"`
+GET_DEVICES=`cat $STATUS_FILE | grep "^\/"|grep -v uuid`
+PARSEME="/tmp/mount.status.parseme"
+set_title() {
+     echo -e "[Device]\t[Type]\t[MountPoint]\t[Options]"
+     echo "·"
+}
+
+function uuid_devices() {
+     for i in $GET_UUID_DEVICES; do
+
+          DEVICE=$(findfs UUID=$(echo $(echo $i|cut -d: -f1)|cut -d'/' -f5))
+          MOUNT_POINT=$(echo $i|cut -d: -f3)
+          FSTYPE=$(echo $i|cut -d: -f5)
+          OPTIONS=$(echo $i|cut -d: -f6)
+
+          echo -e "$DEVICE\t$FSTYPE\t$MOUNT_POINT\t$OPTIONS"
+     done
+}
+
+function normal_devices() {
+     for i in $GET_DEVICES; do
+
+          DEVICE=$(echo $i|cut -d: -f1)
+          MOUNT_POINT=$(echo $i|cut -d: -f3)
+          FSTYPE=$(echo $i|cut -d: -f5)
+          OPTIONS=$(echo $i|cut -d: -f6)
+          echo -e "$DEVICE\t$FSTYPE\t$MOUNT_POINT\t$OPTIONS"
+     done
+}
+set_title > $PARSEME
+uuid_devices >> $PARSEME
+normal_devices >> $PARSEME
+
+column -t $PARSEME
